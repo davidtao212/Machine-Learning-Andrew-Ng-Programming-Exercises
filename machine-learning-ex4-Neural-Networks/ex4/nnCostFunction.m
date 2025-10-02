@@ -38,6 +38,23 @@ Theta2_grad = zeros(size(Theta2));
 %         variable J. After implementing Part 1, you can verify that your
 %         cost function computation is correct by verifying the cost
 %         computed in ex4.m
+
+a1 = [ones(1,m); X'];
+z2 = Theta1 * a1;
+a2 = sigmoid(z2);
+a2 = [ones(1,m); a2];
+z3 = Theta2 * a2;
+a3 = sigmoid(z3);
+
+yy = zeros(num_labels, m);
+idx = sub2ind(size(yy), y', 1:m);
+yy(idx) = 1;
+J = -sum(sum(yy.*log(a3) + (1-yy).*log(1-a3)))/m;
+
+reg = lambda * (sum(sum(Theta1(:,2:end).^2)) + sum(sum(Theta2(:,2:end).^2)))/(2*m);
+J = J + reg;
+
+
 %
 % Part 2: Implement the backpropagation algorithm to compute the gradients
 %         Theta1_grad and Theta2_grad. You should return the partial derivatives of
@@ -53,6 +70,13 @@ Theta2_grad = zeros(size(Theta2));
 %         Hint: We recommend implementing backpropagation using a for-loop
 %               over the training examples if you are implementing it for the 
 %               first time.
+
+d3 = a3 - yy;
+d2 = Theta2(:,2:end)'*d3 .* sigmoidGradient(z2);
+Theta2_grad = d3 * a2' / m;
+Theta1_grad = d2 * a1' / m;
+
+
 %
 % Part 3: Implement regularization with the cost function and gradients.
 %
@@ -61,46 +85,10 @@ Theta2_grad = zeros(size(Theta2));
 %               the regularization separately and then add them to Theta1_grad
 %               and Theta2_grad from Part 2.
 %
-X = [ones(m, 1) X];
-a2=sigmoid(Theta1*X');
-a2 = [ones(m, 1) a2'];
-a3=sigmoid(a2*Theta2');
-y_vect=zeros(num_labels,m);
 
-%convert labels to vectors
-for n=1:m
-    y_vect(y(n),n) = 1;
-end
+Theta1_grad(:,2:end) = Theta1_grad(:,2:end) + lambda * Theta1(:,2:end)/m;
+Theta2_grad(:,2:end) = Theta2_grad(:,2:end) + lambda * Theta2(:,2:end)/m;
 
-%unregularized cost function
-J = sum(sum(-y_vect.*log(a3') - (1-y_vect).*log(1-a3')))/m;
-
-%bias terms are not regularized
-Theta1_reg = Theta1;
-Theta1_reg(:,1)=[];
-Theta2_reg = Theta2;
-Theta2_reg(:,1)=[];
-
-%add regularization term
-J = J + lambda*(sum(sum(Theta1_reg.^2)) + sum(sum(Theta2_reg.^2)))/(2*m);
-
-
-z2=[ones(m, 1) (Theta1*X')'];
-d3=a3'-y_vect;
-
-d2=Theta2'*d3.*sigmoidGradient(z2');
-
-d2(1,:)=[];
-
-Theta1_grad = (Theta1_grad + d2*X)/m;
-Theta2_grad = (Theta2_grad + d3*a2)/m;
-
-%regularize gradient
-tmp=size(Theta1_grad);
-Theta1_grad(:,2:tmp(2)) = Theta1_grad(:,2:tmp(2)) + lambda*Theta1(:,2:tmp(2))/m;
-tmp2=size(Theta2_grad);
-Theta2_grad(:,2:tmp2(2)) = Theta2_grad(:,2:tmp2(2)) + lambda*Theta2(:,2:tmp2(2))/m;
-% -------------------------------------------------------------
 
 % =========================================================================
 
